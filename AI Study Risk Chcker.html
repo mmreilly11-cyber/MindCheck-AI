@@ -1,0 +1,2064 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Study Risk Check</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0d14;
+    --bg2: #0f1420;
+    --card: #141a26;
+    --card2: #1a2133;
+    --border: #1e2a3d;
+    --blue: #3b82f6;
+    --blue-glow: rgba(59,130,246,0.15);
+    --cyan: #06b6d4;
+    --yellow: #f59e0b;
+    --orange: #f97316;
+    --green: #10b981;
+    --red: #ef4444;
+    --purple: #8b5cf6;
+    --text: #e2e8f0;
+    --text2: #94a3b8;
+    --text3: #64748b;
+    --font-head: 'Syne', sans-serif;
+    --font-mono: 'Space Mono', monospace;
+    --font-body: 'DM Sans', sans-serif;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ─── PROGRESS BAR ─── */
+  #progress-bar-wrap {
+    position: fixed; top:0; left:0; right:0; z-index:100;
+    height: 3px;
+    background: var(--border);
+    display: none;
+  }
+  #progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--blue), var(--cyan));
+    transition: width 0.5s ease;
+    width: 0%;
+  }
+
+  /* ─── SHARED ─── */
+  .screen { display: none !important; min-height: 100vh; }
+  .screen.active { display: block !important; }
+
+  .container { max-width: 860px; margin: 0 auto; padding: 0 24px; }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 14px 28px;
+    border-radius: 10px;
+    font-family: var(--font-head);
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+    text-decoration: none;
+  }
+  .btn-primary {
+    background: var(--blue);
+    color: #fff;
+  }
+  .btn-primary:hover { background: #2563eb; transform: translateY(-2px); box-shadow: 0 8px 30px rgba(59,130,246,0.4); }
+  .btn-ghost {
+    background: transparent;
+    color: var(--text2);
+    border: 1px solid var(--border);
+  }
+  .btn-ghost:hover { border-color: var(--blue); color: var(--blue); }
+  .btn-green { background: var(--green); color: #fff; }
+  .btn-green:hover { background: #059669; transform: translateY(-2px); }
+
+  /* ─── LANDING ─── */
+  #screen-home {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .home-hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 80px 0 60px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .grid-bg {
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 60px 60px;
+    opacity: 0.35;
+    pointer-events: none;
+  }
+
+  .grid-fade {
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse 80% 60% at 50% 40%, transparent 40%, var(--bg) 100%);
+    pointer-events: none;
+  }
+
+  .hero-split {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 40px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .hero-side {
+    border-radius: 16px;
+    padding: 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-height: 200px;
+  }
+  .hero-side-good {
+    background: linear-gradient(135deg, rgba(16,185,129,0.08), rgba(16,185,129,0.03));
+    border: 1px solid rgba(16,185,129,0.2);
+  }
+  .hero-side-bad {
+    background: linear-gradient(135deg, rgba(239,68,68,0.08), rgba(239,68,68,0.03));
+    border: 1px solid rgba(239,68,68,0.2);
+  }
+  .side-label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .side-label-good { color: var(--green); }
+  .side-label-bad { color: var(--red); }
+  .side-dot { width: 7px; height: 7px; border-radius: 50%; }
+  .side-dot-good { background: var(--green); animation: pulse-g 2s infinite; }
+  .side-dot-bad { background: var(--red); animation: pulse-r 2s infinite; }
+
+  @keyframes pulse-g { 0%,100%{opacity:1} 50%{opacity:0.4} }
+  @keyframes pulse-r { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+  .side-scene {
+    font-size: 28px;
+    margin: 4px 0;
+  }
+  .side-desc {
+    font-size: 13px;
+    color: var(--text2);
+    line-height: 1.6;
+  }
+  .side-tag {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    margin-top: auto;
+    width: fit-content;
+  }
+  .side-tag-good { background: rgba(16,185,129,0.15); color: var(--green); }
+  .side-tag-bad { background: rgba(239,68,68,0.15); color: var(--red); }
+
+  .hero-content { position: relative; z-index: 2; }
+
+  .hero-eyebrow {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    color: var(--cyan);
+    margin-bottom: 20px;
+  }
+
+  h1 {
+    font-family: var(--font-head);
+    font-size: clamp(36px, 6vw, 58px);
+    font-weight: 800;
+    line-height: 1.1;
+    margin-bottom: 20px;
+    letter-spacing: -1px;
+  }
+
+  .hero-sub {
+    font-size: 18px;
+    color: var(--text2);
+    line-height: 1.7;
+    max-width: 620px;
+    margin-bottom: 36px;
+  }
+
+  .hero-cta { display: flex; gap: 12px; flex-wrap: wrap; }
+
+  /* Stats section */
+  .stats-section {
+    background: var(--bg2);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    padding: 60px 0;
+  }
+  .stats-label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--text3);
+    text-align: center;
+    margin-bottom: 40px;
+  }
+  .stat-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+  .stat-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 28px 22px;
+    text-align: center;
+  }
+  .stat-num {
+    font-family: var(--font-head);
+    font-size: 44px;
+    font-weight: 800;
+    color: var(--blue);
+    line-height: 1;
+    margin-bottom: 10px;
+  }
+  .stat-desc {
+    font-size: 13px;
+    color: var(--text2);
+    line-height: 1.6;
+  }
+  .stat-source {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text3);
+    margin-top: 10px;
+  }
+
+  .callout {
+    text-align: center;
+    padding: 40px 20px;
+    font-size: 18px;
+    color: var(--text2);
+  }
+  .callout strong { color: var(--text); }
+
+  /* how it works */
+  .how-section { padding: 70px 0; }
+  .how-section h2 {
+    font-family: var(--font-head);
+    font-size: 28px;
+    font-weight: 800;
+    margin-bottom: 36px;
+    text-align: center;
+  }
+  .chapters-row {
+    display: flex;
+    gap: 0;
+    position: relative;
+    align-items: flex-start;
+  }
+  .chapters-row::before {
+    content: '';
+    position: absolute;
+    top: 22px; left: 22px; right: 22px;
+    height: 1px;
+    background: var(--border);
+    z-index: 0;
+  }
+  .chap-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 10px;
+    position: relative;
+    z-index: 1;
+  }
+  .chap-num {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    background: var(--card);
+    border: 2px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--blue);
+  }
+  .chap-day {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text3);
+  }
+  .chap-title {
+    font-family: var(--font-head);
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.3;
+  }
+  .chap-emoji { font-size: 20px; }
+
+  .start-cta-section {
+    text-align: center;
+    padding: 60px 0 80px;
+  }
+  .start-cta-section p {
+    color: var(--text2);
+    margin-bottom: 24px;
+    font-size: 16px;
+  }
+
+  /* ─── HOW IT WORKS SCREEN ─── */
+  #screen-how {
+    min-height: 100vh;
+    padding: 60px 0;
+    justify-content: center;
+    flex-direction: column;
+  }
+  #screen-how.active { display: flex !important; }
+
+  .how-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 48px;
+    text-align: center;
+    max-width: 640px;
+    margin: 0 auto;
+  }
+  .how-card h2 {
+    font-family: var(--font-head);
+    font-size: 30px;
+    font-weight: 800;
+    margin-bottom: 16px;
+  }
+  .how-card p {
+    color: var(--text2);
+    line-height: 1.7;
+    margin-bottom: 24px;
+    font-size: 15px;
+  }
+  .how-score-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 24px 0;
+    text-align: left;
+  }
+  .how-score-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: var(--bg2);
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    font-size: 14px;
+  }
+  .score-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+  /* ─── GAME SCREEN ─── */
+  #screen-game { display: none; padding: 40px 0 80px; }
+  #screen-game.active { display: block; }
+
+  .game-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 32px;
+    padding: 16px 24px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+  .game-chapter-label {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .game-chapter-title {
+    font-family: var(--font-head);
+    font-size: 16px;
+    font-weight: 700;
+    margin-top: 2px;
+  }
+  .game-mini-scores {
+    display: flex;
+    gap: 8px;
+  }
+  .mini-score {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+  }
+  .mini-score-bar-wrap {
+    width: 28px;
+    height: 36px;
+    background: var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+  }
+  .mini-score-bar {
+    width: 100%;
+    border-radius: 2px;
+    transition: height 0.6s ease;
+  }
+  .mini-score-label {
+    font-family: var(--font-mono);
+    font-size: 8px;
+    color: var(--text3);
+    text-transform: uppercase;
+  }
+
+  .scenario-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 36px;
+    margin-bottom: 24px;
+    animation: fadeSlideIn 0.5s ease;
+  }
+  @keyframes fadeSlideIn { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+
+  .scenario-day-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 14px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 20px;
+  }
+  .scenario-emoji-big { font-size: 32px; margin-bottom: 16px; }
+  .scenario-text {
+    font-size: 20px;
+    font-weight: 600;
+    font-family: var(--font-head);
+    line-height: 1.4;
+    margin-bottom: 8px;
+  }
+  .scenario-sub {
+    font-size: 14px;
+    color: var(--text2);
+    line-height: 1.6;
+    margin-bottom: 0;
+  }
+
+  .choices-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .choice-btn {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px 22px;
+    cursor: pointer;
+    text-align: left;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    transition: all 0.2s;
+    width: 100%;
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 15px;
+    line-height: 1.5;
+    animation: fadeSlideIn 0.4s ease both;
+  }
+  .choice-btn:nth-child(1) { animation-delay: 0.05s }
+  .choice-btn:nth-child(2) { animation-delay: 0.10s }
+  .choice-btn:nth-child(3) { animation-delay: 0.15s }
+  .choice-btn:nth-child(4) { animation-delay: 0.20s }
+  .choice-btn:nth-child(5) { animation-delay: 0.25s }
+
+  .choice-btn:hover:not(:disabled) {
+    border-color: var(--blue);
+    background: rgba(59,130,246,0.06);
+    transform: translateX(4px);
+  }
+  .choice-btn:disabled { cursor: default; }
+  .choice-btn.selected-good {
+    border-color: var(--green);
+    background: rgba(16,185,129,0.08);
+  }
+  .choice-btn.selected-okay {
+    border-color: var(--yellow);
+    background: rgba(245,158,11,0.08);
+  }
+  .choice-btn.selected-bad {
+    border-color: var(--red);
+    background: rgba(239,68,68,0.08);
+  }
+  .choice-letter {
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text2);
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .choice-text { flex: 1; }
+
+  /* feedback card */
+  .feedback-card {
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 24px;
+    animation: fadeSlideIn 0.4s ease;
+    display: none;
+  }
+  .feedback-card.show { display: block; }
+  .feedback-card.good { background: rgba(16,185,129,0.07); border: 1px solid rgba(16,185,129,0.25); }
+  .feedback-card.okay { background: rgba(245,158,11,0.07); border: 1px solid rgba(245,158,11,0.25); }
+  .feedback-card.bad { background: rgba(239,68,68,0.07); border: 1px solid rgba(239,68,68,0.25); }
+
+  .feedback-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .feedback-tag {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 4px 10px;
+    border-radius: 6px;
+  }
+  .feedback-card.good .feedback-tag { background: rgba(16,185,129,0.2); color: var(--green); }
+  .feedback-card.okay .feedback-tag { background: rgba(245,158,11,0.2); color: var(--yellow); }
+  .feedback-card.bad .feedback-tag { background: rgba(239,68,68,0.2); color: var(--red); }
+
+  .feedback-title {
+    font-family: var(--font-head);
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .feedback-body {
+    font-size: 14px;
+    color: var(--text2);
+    line-height: 1.65;
+    margin-bottom: 10px;
+  }
+  .feedback-better {
+    font-size: 13px;
+    color: var(--text2);
+    padding: 12px;
+    background: rgba(255,255,255,0.03);
+    border-radius: 8px;
+    border-left: 3px solid var(--blue);
+    line-height: 1.6;
+  }
+  .feedback-better strong { color: var(--text); }
+
+  .next-btn-row { display: flex; justify-content: flex-end; }
+
+  /* Reflection screen */
+  .reflect-item {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    margin-bottom: 12px;
+    animation: fadeSlideIn 0.4s ease both;
+  }
+  .reflect-item:nth-child(1){animation-delay:0.05s}
+  .reflect-item:nth-child(2){animation-delay:0.10s}
+  .reflect-item:nth-child(3){animation-delay:0.15s}
+  .reflect-item:nth-child(4){animation-delay:0.20s}
+  .reflect-item:nth-child(5){animation-delay:0.25s}
+  .reflect-item:nth-child(6){animation-delay:0.30s}
+
+  .reflect-statement { font-size: 15px; color: var(--text); line-height: 1.5; }
+  .reflect-btns { display: flex; gap: 8px; flex-shrink: 0; }
+  .reflect-choice {
+    padding: 8px 18px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg2);
+    color: var(--text2);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .reflect-choice:hover { border-color: var(--blue); color: var(--blue); }
+  .reflect-choice.chosen-agree { background: rgba(16,185,129,0.15); border-color: var(--green); color: var(--green); }
+  .reflect-choice.chosen-disagree { background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.4); color: #f87171; }
+
+  /* ─── RESULTS SCREEN ─── */
+  #screen-results { display: none; padding: 40px 0 80px; }
+  #screen-results.active { display: block; }
+
+  .result-hero {
+    text-align: center;
+    padding: 48px 24px 36px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    margin-bottom: 28px;
+  }
+  .result-category-label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    color: var(--text3);
+    margin-bottom: 12px;
+  }
+  .result-category {
+    font-family: var(--font-head);
+    font-size: 38px;
+    font-weight: 800;
+    margin-bottom: 12px;
+    line-height: 1.1;
+  }
+  .result-desc {
+    font-size: 16px;
+    color: var(--text2);
+    line-height: 1.7;
+    max-width: 560px;
+    margin: 0 auto 24px;
+  }
+
+  /* Brain battery */
+  .battery-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    margin: 20px 0;
+  }
+  .battery-label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .battery {
+    width: 80px; height: 36px;
+    border: 2px solid var(--border);
+    border-radius: 6px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    padding: 3px;
+    background: var(--bg);
+  }
+  .battery::after {
+    content: '';
+    position: absolute;
+    right: -8px; top: 50%;
+    transform: translateY(-50%);
+    width: 6px; height: 14px;
+    background: var(--border);
+    border-radius: 0 3px 3px 0;
+  }
+  .battery-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 1s ease, background 1s ease;
+  }
+  .battery-pct {
+    font-family: var(--font-mono);
+    font-size: 22px;
+    font-weight: 700;
+  }
+
+  /* Radar chart */
+  .radar-section {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 32px;
+    margin-bottom: 24px;
+    text-align: center;
+  }
+  .radar-section h3 {
+    font-family: var(--font-head);
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 24px;
+  }
+  #radar-canvas { max-width: 320px; margin: 0 auto; display: block; }
+
+  /* score bars */
+  .score-bars-section {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 32px;
+    margin-bottom: 24px;
+  }
+  .score-bars-section h3 {
+    font-family: var(--font-head);
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 20px;
+  }
+  .score-bar-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 16px;
+  }
+  .score-bar-label {
+    font-size: 13px;
+    color: var(--text2);
+    width: 130px;
+    flex-shrink: 0;
+  }
+  .score-bar-track {
+    flex: 1;
+    height: 10px;
+    background: var(--bg2);
+    border-radius: 5px;
+    overflow: hidden;
+  }
+  .score-bar-fill {
+    height: 100%;
+    border-radius: 5px;
+    transition: width 1.2s ease;
+    width: 0;
+  }
+  .score-bar-val {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text2);
+    width: 36px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  /* habits */
+  .habits-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 24px;
+  }
+  .habits-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 28px;
+  }
+  .habits-card h3 {
+    font-family: var(--font-head);
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .habits-list { display: flex; flex-direction: column; gap: 10px; }
+  .habit-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 13px;
+    color: var(--text2);
+    line-height: 1.5;
+  }
+  .habit-icon { flex-shrink: 0; font-size: 15px; margin-top: 1px; }
+
+  /* plan */
+  .plan-section {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 32px;
+    margin-bottom: 24px;
+  }
+  .plan-section h3 {
+    font-family: var(--font-head);
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .plan-sub {
+    font-size: 13px;
+    color: var(--text3);
+    margin-bottom: 24px;
+    font-family: var(--font-mono);
+  }
+  .plan-item {
+    display: flex;
+    gap: 16px;
+    padding: 16px;
+    background: var(--bg2);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    margin-bottom: 12px;
+  }
+  .plan-day-num {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--blue);
+    text-transform: uppercase;
+    white-space: nowrap;
+    padding-top: 2px;
+  }
+  .plan-item-content {}
+  .plan-item-title {
+    font-family: var(--font-head);
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .plan-item-desc {
+    font-size: 13px;
+    color: var(--text2);
+    line-height: 1.6;
+  }
+
+  /* good/bad panel */
+  .good-bad-section {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 32px;
+    margin-bottom: 24px;
+  }
+  .good-bad-section h3 {
+    font-family: var(--font-head);
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 20px;
+    text-align: center;
+  }
+  .good-bad-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+  .good-list-card {
+    background: rgba(16,185,129,0.04);
+    border: 1px solid rgba(16,185,129,0.15);
+    border-radius: 14px;
+    padding: 20px;
+  }
+  .bad-list-card {
+    background: rgba(239,68,68,0.04);
+    border: 1px solid rgba(239,68,68,0.15);
+    border-radius: 14px;
+    padding: 20px;
+  }
+  .gb-title {
+    font-family: var(--font-head);
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .gb-title.good { color: var(--green); }
+  .gb-title.bad { color: var(--red); }
+  .gb-item {
+    display: flex;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--text2);
+    line-height: 1.5;
+    margin-bottom: 8px;
+    align-items: flex-start;
+  }
+  .gb-icon { flex-shrink: 0; margin-top: 1px; }
+
+  /* pledge */
+  .pledge-section {
+    background: linear-gradient(135deg, rgba(59,130,246,0.08), rgba(6,182,212,0.05));
+    border: 1px solid rgba(59,130,246,0.2);
+    border-radius: 20px;
+    padding: 36px;
+    text-align: center;
+    margin-bottom: 24px;
+  }
+  .pledge-section h3 {
+    font-family: var(--font-head);
+    font-size: 22px;
+    font-weight: 800;
+    margin-bottom: 8px;
+  }
+  .pledge-section p { color: var(--text2); font-size: 14px; margin-bottom: 24px; }
+  .pledge-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 28px;
+    max-width: 480px;
+    margin: 0 auto 24px;
+    text-align: left;
+  }
+  .pledge-title {
+    font-family: var(--font-head);
+    font-size: 18px;
+    font-weight: 800;
+    text-align: center;
+    margin-bottom: 20px;
+    color: var(--blue);
+    letter-spacing: -0.5px;
+  }
+  .pledge-line {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    font-size: 14px;
+    color: var(--text2);
+    margin-bottom: 12px;
+    line-height: 1.5;
+  }
+  .pledge-line::before {
+    content: '✓';
+    color: var(--green);
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .restart-row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+  /* Research modal */
+  .modal-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 40px;
+    max-width: 640px;
+    width: 100%;
+    max-height: 85vh;
+    overflow-y: auto;
+    position: relative;
+  }
+  .modal h2 {
+    font-family: var(--font-head);
+    font-size: 24px;
+    font-weight: 800;
+    margin-bottom: 8px;
+  }
+  .modal-sub { color: var(--text3); font-family: var(--font-mono); font-size: 11px; margin-bottom: 28px; }
+  .modal-close {
+    position: absolute; top: 20px; right: 20px;
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 8px; width: 32px; height: 32px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: var(--text2); font-size: 16px;
+    transition: all 0.2s;
+  }
+  .modal-close:hover { border-color: var(--blue); color: var(--blue); }
+  .research-item {
+    border-left: 3px solid var(--blue);
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    background: var(--bg2);
+    border-radius: 0 8px 8px 0;
+  }
+  .research-item h4 {
+    font-family: var(--font-head);
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .research-item p { font-size: 13px; color: var(--text2); line-height: 1.6; }
+  .research-item .src { font-family: var(--font-mono); font-size: 10px; color: var(--text3); margin-top: 8px; }
+
+  /* Teacher modal */
+  .teacher-item {
+    border-left: 3px solid var(--green);
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    background: var(--bg2);
+    border-radius: 0 8px 8px 0;
+  }
+  .teacher-item h4 {
+    font-family: var(--font-head);
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .teacher-item p { font-size: 13px; color: var(--text2); line-height: 1.6; }
+
+  /* chapter nav */
+  .chapter-dots {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 28px;
+  }
+  .chap-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--border);
+    transition: all 0.3s;
+  }
+  .chap-dot.active { background: var(--blue); transform: scale(1.3); }
+  .chap-dot.done { background: var(--green); }
+
+  /* responsive */
+  @media (max-width: 640px) {
+    .hero-split { grid-template-columns: 1fr; }
+    .stat-cards { grid-template-columns: 1fr; }
+    .habits-grid { grid-template-columns: 1fr; }
+    .good-bad-grid { grid-template-columns: 1fr; }
+    .chapters-row { flex-wrap: wrap; gap: 16px; }
+    .chapters-row::before { display: none; }
+    .game-mini-scores { display: none; }
+    .reflect-item { flex-direction: column; align-items: flex-start; }
+    h1 { font-size: 32px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Progress bar -->
+<div id="progress-bar-wrap"><div id="progress-bar"></div></div>
+
+<!-- ═══════════════ SCREEN: HOME ═══════════════ -->
+<div id="screen-home" class="screen active">
+  <div class="home-hero">
+    <div class="grid-bg"></div>
+    <div class="grid-fade"></div>
+    <div class="container hero-content">
+      <div class="hero-split">
+        <div class="hero-side hero-side-good">
+          <div class="side-label side-label-good"><span class="side-dot side-dot-good"></span> Healthy AI Use</div>
+          <div class="side-scene">🧠📝</div>
+          <div class="side-desc">Write your own draft first, then ask AI for targeted feedback on structure and argument strength.</div>
+          <div class="side-tag side-tag-good">AI as training partner</div>
+        </div>
+        <div class="hero-side hero-side-bad">
+          <div class="side-label side-label-bad"><span class="side-dot side-dot-bad"></span> Over-Reliance Risk</div>
+          <div class="side-scene">📋🤖</div>
+          <div class="side-desc">Paste the AI essay into the document. Done in 3 minutes. Can't explain a single paragraph.</div>
+          <div class="side-tag side-tag-bad">AI as replacement</div>
+        </div>
+      </div>
+
+      <div class="hero-eyebrow">⚡ Interactive AI Self-Assessment</div>
+      <h1>Are You Using AI…<br>or Letting It Use You?</h1>
+      <p class="hero-sub">Play through a student's week and find out whether your AI habits are helping you learn — or quietly replacing your thinking.</p>
+      <div class="hero-cta">
+        <button class="btn btn-primary" onclick="showScreen('screen-how')">▶ Start the Challenge</button>
+        <button class="btn btn-ghost" onclick="openResearch()">📊 See the Research</button>
+        <button class="btn btn-ghost" onclick="openTeacher()">👩‍🏫 Teacher / Parent View</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="stats-section">
+    <div class="container">
+      <div class="stats-label">Why this matters — the data</div>
+      <div class="stat-cards">
+        <div class="stat-card">
+          <div class="stat-num">40%</div>
+          <div class="stat-desc">of teens have used generative AI for schoolwork</div>
+          <div class="stat-source">Common Sense Media, 2024</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num">49%</div>
+          <div class="stat-desc">of teen AI users actually check facts from other sources</div>
+          <div class="stat-source">Common Sense Media, 2024</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num">2x</div>
+          <div class="stat-desc">Higher AI dependence is linked to lower critical thinking scores in research</div>
+          <div class="stat-source">Meta-analysis, 2025</div>
+        </div>
+      </div>
+      <div class="callout"><strong>AI itself is not the problem.</strong> Unchecked dependence is.</div>
+    </div>
+  </div>
+
+  <div class="how-section">
+    <div class="container">
+      <h2>Your Week. Your Choices. Your Profile.</h2>
+      <div class="chapters-row">
+        <div class="chap-item">
+          <div class="chap-num">1</div>
+          <div class="chap-emoji">📝</div>
+          <div class="chap-day">Monday</div>
+          <div class="chap-title">The Essay Panic</div>
+        </div>
+        <div class="chap-item">
+          <div class="chap-num">2</div>
+          <div class="chap-emoji">📚</div>
+          <div class="chap-day">Tuesday</div>
+          <div class="chap-title">Study Session</div>
+        </div>
+        <div class="chap-item">
+          <div class="chap-num">3</div>
+          <div class="chap-emoji">🔍</div>
+          <div class="chap-day">Wednesday</div>
+          <div class="chap-title">Research Project</div>
+        </div>
+        <div class="chap-item">
+          <div class="chap-num">4</div>
+          <div class="chap-emoji">🤝</div>
+          <div class="chap-day">Thursday</div>
+          <div class="chap-title">Group Project</div>
+        </div>
+        <div class="chap-item">
+          <div class="chap-num">5</div>
+          <div class="chap-emoji">🪞</div>
+          <div class="chap-day">Friday</div>
+          <div class="chap-title">Reflection</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="start-cta-section">
+    <div class="container">
+      <p>Takes about 5–7 minutes. No account needed.</p>
+      <button class="btn btn-primary" onclick="showScreen('screen-how')" style="font-size:17px;padding:18px 40px;">Start the Challenge →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ SCREEN: HOW IT WORKS ═══════════════ -->
+<div id="screen-how" class="screen">
+  <div class="container">
+    <div class="how-card">
+      <div style="font-size:40px;margin-bottom:20px">🎮</div>
+      <h2>Here's how it works</h2>
+      <p>You'll face 5 realistic student scenarios. Each choice you make builds a personalized AI-use profile across five dimensions:</p>
+      <div class="how-score-list">
+        <div class="how-score-item">
+          <span class="score-dot" style="background:var(--red)"></span>
+          <div><strong style="font-family:var(--font-head)">Thinking Risk</strong> — Are you outsourcing your reasoning?</div>
+        </div>
+        <div class="how-score-item">
+          <span class="score-dot" style="background:var(--orange)"></span>
+          <div><strong style="font-family:var(--font-head)">Integrity Risk</strong> — Are you crossing ethical lines?</div>
+        </div>
+        <div class="how-score-item">
+          <span class="score-dot" style="background:var(--yellow)"></span>
+          <div><strong style="font-family:var(--font-head)">Verification Risk</strong> — Do you trust AI too easily?</div>
+        </div>
+        <div class="how-score-item">
+          <span class="score-dot" style="background:var(--purple)"></span>
+          <div><strong style="font-family:var(--font-head)">Privacy Risk</strong> — Do you share sensitive information?</div>
+        </div>
+        <div class="how-score-item">
+          <span class="score-dot" style="background:var(--green)"></span>
+          <div><strong style="font-family:var(--font-head)">Growth Score</strong> — Are you using AI to improve?</div>
+        </div>
+      </div>
+      <p>After each choice, you'll get instant feedback. At the end, you'll get a personalized profile and improvement plan.</p>
+      <button class="btn btn-primary" onclick="startGame()" style="width:100%;justify-content:center;font-size:16px;padding:16px;">Let's go — Start Day 1 →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ SCREEN: GAME ═══════════════ -->
+<div id="screen-game" class="screen">
+  <div class="container">
+    <div class="game-header">
+      <div>
+        <div class="game-chapter-label" id="chapter-label">Chapter 1 of 5</div>
+        <div class="game-chapter-title" id="chapter-title">The Essay Panic</div>
+      </div>
+      <div class="game-mini-scores" id="mini-scores"></div>
+    </div>
+
+    <div class="chapter-dots" id="chapter-dots"></div>
+
+    <div id="game-content"></div>
+  </div>
+</div>
+
+<!-- ═══════════════ SCREEN: RESULTS ═══════════════ -->
+<div id="screen-results" class="screen">
+  <div class="container">
+    <div class="result-hero">
+      <div class="result-category-label">Your AI Use Profile</div>
+      <div class="result-category" id="result-category">—</div>
+      <div class="result-desc" id="result-desc">—</div>
+
+      <div class="battery-wrap">
+        <div class="battery-label">Brain Battery</div>
+        <div class="battery"><div class="battery-fill" id="battery-fill"></div></div>
+        <div class="battery-pct" id="battery-pct">—</div>
+      </div>
+    </div>
+
+    <div class="score-bars-section">
+      <h3>Your Risk Profile</h3>
+      <div id="score-bars"></div>
+    </div>
+
+    <div class="habits-grid">
+      <div class="habits-card">
+        <h3 style="color:var(--green)">✅ Your Healthy Habits</h3>
+        <div class="habits-list" id="good-habits"></div>
+      </div>
+      <div class="habits-card">
+        <h3 style="color:var(--red)">⚠️ Watch Out For</h3>
+        <div class="habits-list" id="risky-habits"></div>
+      </div>
+    </div>
+
+    <div class="plan-section">
+      <h3>Your 7-Day Improvement Plan</h3>
+      <div class="plan-sub">Personalized based on your choices</div>
+      <div id="improvement-plan"></div>
+    </div>
+
+    <div class="good-bad-section">
+      <h3>The Big Picture</h3>
+      <div class="good-bad-grid">
+        <div class="good-list-card">
+          <div class="gb-title good">✅ Good AI Use</div>
+          <div class="gb-item"><span class="gb-icon">→</span> Ask AI to explain concepts step by step</div>
+          <div class="gb-item"><span class="gb-icon">→</span> Generate practice questions to test yourself</div>
+          <div class="gb-item"><span class="gb-icon">→</span> Get feedback on a draft you already wrote</div>
+          <div class="gb-item"><span class="gb-icon">→</span> Brainstorm examples and counterarguments</div>
+          <div class="gb-item"><span class="gb-icon">→</span> Create study plans and flashcards</div>
+          <div class="gb-item"><span class="gb-icon">→</span> Compare viewpoints, then read real sources</div>
+        </div>
+        <div class="bad-list-card">
+          <div class="gb-title bad">❌ Risky AI Use</div>
+          <div class="gb-item"><span class="gb-icon">→</span> Writing full assignments for submission</div>
+          <div class="gb-item"><span class="gb-icon">→</span> Replacing reading with summaries only</div>
+          <div class="gb-item"><span class="gb-icon">→</span> Copying answers you can't explain</div>
+          <div class="gb-item"><span class="gb-icon">→</span> Trusting citations without verifying them</div>
+          <div class="gb-item"><span class="gb-icon">→</span> Using AI before making any effort yourself</div>
+          <div class="gb-item"><span class="gb-icon">→</span> Pasting private data into public AI tools</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pledge-section">
+      <h3>📋 My AI Study Pledge</h3>
+      <p>Take this with you as a reminder of how to use AI well.</p>
+      <div class="pledge-card">
+        <div class="pledge-title">My AI Study Rules</div>
+        <div class="pledge-line">I will think first — try for at least 10 minutes before asking AI</div>
+        <div class="pledge-line">I will verify AI facts against real sources before using them</div>
+        <div class="pledge-line">I will not submit work I cannot explain in my own words</div>
+        <div class="pledge-line">I will use AI to improve my thinking, not replace it</div>
+        <div class="pledge-line">I will protect my privacy and not share sensitive information</div>
+      </div>
+      <div class="restart-row">
+        <button class="btn btn-primary" onclick="printPledge()">🖨️ Print Pledge Card</button>
+        <button class="btn btn-ghost" onclick="restartGame()">↩ Try Again</button>
+        <button class="btn btn-ghost" onclick="showScreen('screen-home')">🏠 Home</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Research Modal -->
+<div class="modal-overlay" id="research-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('research-modal')">✕</button>
+    <h2>The Research Behind This</h2>
+    <div class="modal-sub">Sources informing this tool</div>
+    <div class="research-item">
+      <h4>AI Improves Academic Performance — When Used Well</h4>
+      <p>A 2025 meta-analysis found a significant positive overall effect of AI tools on students' academic performance, particularly when used for structured learning support rather than answer generation.</p>
+      <div class="src">Meta-analysis on AI in Education, 2025</div>
+    </div>
+    <div class="research-item">
+      <h4>High Dependence Linked to Lower Critical Thinking</h4>
+      <p>Multiple studies found that greater AI dependence was associated with lower critical thinking scores. Students who outsourced reasoning tasks showed reduced ability to solve novel problems independently.</p>
+      <div class="src">Educational Psychology Research, 2024–2025</div>
+    </div>
+    <div class="research-item">
+      <h4>40% of Teens Use AI for Schoolwork</h4>
+      <p>A 2024 Common Sense Media survey found that 40% of teens had used generative AI for schoolwork. Of those, 46% said their most recent use was without teacher permission.</p>
+      <div class="src">Common Sense Media, 2024</div>
+    </div>
+    <div class="research-item">
+      <h4>Only Half Verify AI Facts</h4>
+      <p>Among teens who used AI for school assignments, 39% noticed a problem or inaccuracy in AI output — but only 49% said they had checked other sources to verify accuracy.</p>
+      <div class="src">Common Sense Media, 2024</div>
+    </div>
+    <div class="research-item">
+      <h4>AI Detection Tools Are Not Always Fair</h4>
+      <p>20% of Black teens, 10% of Latino teens, and 7% of White teens reported having schoolwork incorrectly flagged as AI-generated when it was not. AI detection is not reliable and can harm students unfairly.</p>
+      <div class="src">Common Sense Media, 2024</div>
+    </div>
+    <div class="research-item">
+      <h4>UNESCO & OECD: Human-Centered AI Use</h4>
+      <p>UNESCO's guidance and AI competency frameworks emphasize safe, ethical, responsible, human-centered use. The goal is AI that augments human capability, not replaces it.</p>
+      <div class="src">UNESCO AI Competency Framework, 2024</div>
+    </div>
+    <div class="research-item">
+      <h4>Hallucination, Privacy & Bias Risks</h4>
+      <p>A Springer systematic review highlights hallucination (AI confidently giving wrong answers), bias in training data, privacy risks from data sharing, and transparency concerns as major documented risks of over-reliance in educational contexts.</p>
+      <div class="src">Springer Systematic Review on AI in Education, 2024</div>
+    </div>
+  </div>
+</div>
+
+<!-- Teacher Modal -->
+<div class="modal-overlay" id="teacher-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('teacher-modal')">✕</button>
+    <h2>For Teachers & Parents</h2>
+    <div class="modal-sub">How to use this tool in your context</div>
+    <div class="teacher-item">
+      <h4>What this tool does</h4>
+      <p>This interactive experience helps students self-reflect on their AI habits through realistic decision-making scenarios. It does not accuse or punish — it reveals patterns and teaches through consequences.</p>
+    </div>
+    <div class="teacher-item">
+      <h4>How to use it in class</h4>
+      <p>Assign it as a 5-minute warm-up before a unit on academic integrity. Then use the results screen as a discussion prompt: "What habits showed up for you? What would you change?" The reflection is more valuable than the score.</p>
+    </div>
+    <div class="teacher-item">
+      <h4>The tool does NOT flag students</h4>
+      <p>This is not a surveillance or detection tool. Results are private to the student. The goal is self-awareness and skill-building, not policing. AI detection tools have documented accuracy and fairness problems.</p>
+    </div>
+    <div class="teacher-item">
+      <h4>Key conversation starters</h4>
+      <p>"Could you defend every sentence in your assignment?" / "What would you do if AI gave you a wrong answer?" / "What does using AI as a tutor vs. a shortcut look like to you?"</p>
+    </div>
+    <div class="teacher-item">
+      <h4>The nuance that matters</h4>
+      <p>Research shows AI can genuinely improve academic performance when used well. The goal of this tool is not to ban AI — it's to teach the difference between AI as a learning scaffold and AI as a replacement for thinking.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════ GAME DATA ═══════════════
+
+const chapters = [
+  {
+    id: 1,
+    day: 'Monday',
+    title: 'The Essay Panic',
+    emoji: '📝',
+    scenario: 'You have a 1,200-word essay due tomorrow morning. You barely started. It\'s 8pm.',
+    sub: 'The topic is the causes of World War I. How do you use AI?',
+    choices: [
+      {
+        text: 'Ask AI to write the full essay — just paste it in and lightly edit',
+        quality: 'bad',
+        scores: { thinking: 28, integrity: 25, verification: 5, privacy: 0, growth: -15 },
+        feedback: {
+          tag: 'High Risk',
+          title: 'Substitution, not support',
+          body: 'This is the highest-risk move. You may submit words you cannot explain or defend. If a teacher asks follow-up questions, you\'ll struggle. AI-written text can also contain confident-sounding errors.',
+          better: '💡 Better move: Even under pressure, write bullet points of your own ideas first. Then ask AI to help you develop those ideas — you stay the author.'
+        }
+      },
+      {
+        text: 'Ask AI to generate a thesis and outline, then write the body yourself',
+        quality: 'okay',
+        scores: { thinking: 10, integrity: 8, verification: 3, privacy: 0, growth: 8 },
+        feedback: {
+          tag: 'Moderate Risk',
+          title: 'AI is supporting your structure',
+          body: 'This is better — you\'re still doing the writing. But if you don\'t fully understand the thesis AI gave you, you may struggle to support it. Make sure it matches what you actually think.',
+          better: '💡 Tip: Try to write a rough thesis yourself first, then ask AI "here\'s my thesis — what are the weaknesses?" That way you stay in control of the argument.'
+        }
+      },
+      {
+        text: 'Ask AI to explain the topic in simpler terms first, then write your own draft',
+        quality: 'good',
+        scores: { thinking: 5, integrity: 0, verification: 5, privacy: 0, growth: 15 },
+        feedback: {
+          tag: 'Low Risk',
+          title: 'Using AI to learn, then produce',
+          body: 'This is a healthy pattern. You\'re using AI as a tutor to build understanding, and then doing the actual intellectual work yourself. Your essay will reflect genuine thinking.',
+          better: '💡 Bonus move: After writing, ask AI "what arguments am I missing?" to stress-test your thinking before submitting.'
+        }
+      },
+      {
+        text: 'Write your own rough draft first, then use AI for revision feedback',
+        quality: 'good',
+        scores: { thinking: 0, integrity: 0, verification: 0, privacy: 0, growth: 20 },
+        feedback: {
+          tag: 'Best Practice',
+          title: 'The gold standard approach',
+          body: 'Your thinking came first. AI is improving what you already created — that\'s the training-partner model. You\'ll understand every sentence and be able to defend it.',
+          better: '💡 Ask AI specifically: "What\'s the weakest part of my argument?" rather than "make this better" — targeted feedback builds your skills faster.'
+        }
+      },
+      {
+        text: 'Ask AI for 5 counterarguments to think about so your essay is stronger',
+        quality: 'good',
+        scores: { thinking: 2, integrity: 0, verification: 5, privacy: 0, growth: 18 },
+        feedback: {
+          tag: 'Smart Move',
+          title: 'Using AI to deepen reasoning',
+          body: 'Asking for counterarguments forces you to engage with complexity. This is one of the highest-value uses of AI — it challenges your thinking rather than bypassing it.',
+          better: '💡 Remember: verify those counterarguments. AI can fabricate plausible-sounding arguments. Check against your class materials before including them.'
+        }
+      }
+    ]
+  },
+  {
+    id: 2,
+    day: 'Tuesday',
+    title: 'The Study Session',
+    emoji: '📚',
+    scenario: 'You have a test tomorrow in a subject you don\'t fully understand. You open your laptop.',
+    sub: 'How do you use AI to prepare?',
+    choices: [
+      {
+        text: 'Ask AI to just give you the answer key to the practice problems',
+        quality: 'bad',
+        scores: { thinking: 25, integrity: 15, verification: 5, privacy: 0, growth: -12 },
+        feedback: {
+          tag: 'High Risk',
+          title: 'Skipping the learning',
+          body: 'Getting answers without the struggle is the fastest way to fail the test. Your brain learns through retrieval — the struggle of trying to recall is what builds memory. Reading answers doesn\'t do that.',
+          better: '💡 Research on retrieval practice shows that trying (even unsuccessfully) before seeing the answer improves retention far more than reading solutions.'
+        }
+      },
+      {
+        text: 'Ask AI to create practice questions so you can quiz yourself',
+        quality: 'good',
+        scores: { thinking: 2, integrity: 0, verification: 5, privacy: 0, growth: 18 },
+        feedback: {
+          tag: 'Great Move',
+          title: 'Active recall — the best study method',
+          body: 'This is one of the most research-backed study techniques: retrieval practice. You\'re using AI to create the conditions for real learning, not to bypass it. The thinking is still yours.',
+          better: '💡 After quizzing yourself, ask AI to explain any question you got wrong step by step. Understanding the "why" is more durable than memorizing the answer.'
+        }
+      },
+      {
+        text: 'Ask AI to teach you the concept step by step like a personal tutor',
+        quality: 'good',
+        scores: { thinking: 3, integrity: 0, verification: 3, privacy: 0, growth: 16 },
+        feedback: {
+          tag: 'Good Choice',
+          title: 'AI as tutor, not answer machine',
+          body: 'This is a legitimate use of AI — it can explain things patiently, at your level, with examples that suit you. The key is that you\'re engaging with the explanation, not just reading it.',
+          better: '💡 After AI explains something, close it and try to explain it back in your own words (to yourself, or on paper). If you can\'t, re-read and try again.'
+        }
+      },
+      {
+        text: 'Ask AI to summarize your notes so you don\'t have to read them',
+        quality: 'okay',
+        scores: { thinking: 14, integrity: 5, verification: 5, privacy: 3, growth: -5 },
+        feedback: {
+          tag: 'Moderate Risk',
+          title: 'Compression without comprehension',
+          body: 'Summaries can be a starting point, but reading a summary is much weaker than actively engaging with material. You also miss the nuances that a teacher might test on. And pasting your notes into AI has minor privacy considerations.',
+          better: '💡 Better: Summarize your own notes by hand first (forces you to process them), then ask AI "what did I miss?" to catch gaps.'
+        }
+      },
+      {
+        text: 'Ask AI to predict what will be on the test',
+        quality: 'okay',
+        scores: { thinking: 18, integrity: 5, verification: 8, privacy: 0, growth: -8 },
+        feedback: {
+          tag: 'Risky Shortcut',
+          title: 'Betting on guesses',
+          body: 'AI has no idea what your specific teacher will test. It might give confident-sounding predictions that are completely wrong. Studying predicted topics while ignoring actual content is a classic failure mode.',
+          better: '💡 Instead: Ask AI to help you identify the core concepts in the subject area, then study those systematically. That\'s prediction-resistant studying.'
+        }
+      }
+    ]
+  },
+  {
+    id: 3,
+    day: 'Wednesday',
+    title: 'The Research Project',
+    emoji: '🔍',
+    scenario: 'You need credible sources for a history paper. You open an AI chatbot.',
+    sub: 'AI can help with research — but this chapter has landmines. Choose carefully.',
+    choices: [
+      {
+        text: 'Use the sources AI lists in its first answer as your citations',
+        quality: 'bad',
+        scores: { thinking: 10, integrity: 8, verification: 30, privacy: 0, growth: -10 },
+        feedback: {
+          tag: 'Dangerous',
+          title: 'AI hallucination: real risk, real consequences',
+          body: 'AI frequently invents plausible-sounding citations — complete with authors, journals, and page numbers — that do not exist. This is called hallucination. Submitting a fake citation in a paper is a serious academic integrity problem.',
+          better: '💡 Rule: Never cite a source you haven\'t actually verified. AI-suggested sources must always be confirmed in a real database like Google Scholar, JSTOR, or your library.'
+        }
+      },
+      {
+        text: 'Ask AI for source suggestions, then look them up and verify they\'re real',
+        quality: 'good',
+        scores: { thinking: 2, integrity: 0, verification: -10, privacy: 0, growth: 15 },
+        feedback: {
+          tag: 'Best Practice',
+          title: 'AI as research assistant, not research replacement',
+          body: 'This is exactly the right workflow. AI gives you leads; you do the verification. You\'re using AI to speed up research while keeping human oversight — the gold standard.',
+          better: '💡 When verifying, check: Does this source actually say what AI claims? Who is the author? Is the journal credible? Don\'t just confirm the title exists — check the content.'
+        }
+      },
+      {
+        text: 'Paste your private class notes and assignment details into AI to get better answers',
+        quality: 'bad',
+        scores: { thinking: 5, integrity: 5, verification: 5, privacy: 30, growth: 0 },
+        feedback: {
+          tag: 'Privacy Risk',
+          title: 'What you share may not stay private',
+          body: 'Many public AI tools may use your inputs to improve their models, and you cannot control how that data is handled. Pasting confidential class materials, your teacher\'s content, or personal information raises real privacy concerns.',
+          better: '💡 Be deliberate about what you share. Ask: "Would I be okay if this were public?" Stick to general questions rather than pasting private documents.'
+        }
+      },
+      {
+        text: 'Ask AI to summarize different viewpoints on the topic, then read the actual articles yourself',
+        quality: 'good',
+        scores: { thinking: 3, integrity: 0, verification: -5, privacy: 0, growth: 17 },
+        feedback: {
+          tag: 'Smart Approach',
+          title: 'Using AI to navigate, then doing the reading',
+          body: 'You\'re using AI as a map, not as the destination. The AI overview orients you, but you\'re still doing the primary reading. This preserves your ability to form your own analysis.',
+          better: '💡 After reading, try to form your own synthesis. Your paper\'s argument should come from your analysis of sources, not just the AI\'s framing.'
+        }
+      },
+      {
+        text: 'Let AI write your citations and bibliography without checking them',
+        quality: 'bad',
+        scores: { thinking: 8, integrity: 12, verification: 25, privacy: 0, growth: -8 },
+        feedback: {
+          tag: 'High Risk',
+          title: 'Citations need human verification — always',
+          body: 'AI gets citation formats wrong, invents DOI numbers, mistakes publication years, and sometimes cites sources that don\'t exist. A bibliography full of errors undermines your entire paper.',
+          better: '💡 Use AI to generate draft citations, then verify each one against the real source. Tools like Zotero or your library system are better for citation management.'
+        }
+      }
+    ]
+  },
+  {
+    id: 4,
+    day: 'Thursday',
+    title: 'Group Project Ethics',
+    emoji: '🤝',
+    scenario: 'Your group is behind on a presentation. Everyone\'s stressed. The deadline is tomorrow.',
+    sub: 'How do you use AI to help — without it becoming unfair to your group?',
+    choices: [
+      {
+        text: 'Use AI to generate the entire presentation and slides without telling your group',
+        quality: 'bad',
+        scores: { thinking: 20, integrity: 28, verification: 5, privacy: 0, growth: -12 },
+        feedback: {
+          tag: 'Integrity Risk',
+          title: 'Hidden AI use harms collaboration',
+          body: 'Presenting AI-generated work as your contribution misrepresents your effort to your team — and to your teacher. Your group members may also be held accountable for work they didn\'t know was AI-generated.',
+          better: '💡 Transparency matters. If you use AI, tell your group. "I used AI to draft the slides structure — let\'s all review and revise it together" is collaborative. Hiding it is not.'
+        }
+      },
+      {
+        text: 'Use AI to help organize roles and create a timeline so the group can divide work clearly',
+        quality: 'good',
+        scores: { thinking: 3, integrity: 0, verification: 0, privacy: 0, growth: 14 },
+        feedback: {
+          tag: 'Good Use',
+          title: 'AI as project manager assistant',
+          body: 'Using AI for organizational scaffolding — timelines, role allocation, checklists — is a legitimate and low-risk use. You\'re not outsourcing thinking; you\'re streamlining coordination.',
+          better: '💡 Share the AI-generated plan with your whole group and refine it together. This keeps everyone in the loop and builds shared ownership.'
+        }
+      },
+      {
+        text: 'Ask AI to suggest visual ideas and slide titles, then your group writes the actual content',
+        quality: 'good',
+        scores: { thinking: 4, integrity: 0, verification: 0, privacy: 0, growth: 13 },
+        feedback: {
+          tag: 'Good Collaboration',
+          title: 'AI handles format, humans handle substance',
+          body: 'Using AI for visual structure while your group generates the actual content is a clean division. The learning and ideas still come from humans. This is a strong model for group AI use.',
+          better: '💡 Document what AI contributed vs. what your group wrote. Some teachers ask for this, and it\'s good practice for transparency in AI-assisted work.'
+        }
+      },
+      {
+        text: 'Hide your AI use from teammates so they don\'t judge you',
+        quality: 'bad',
+        scores: { thinking: 5, integrity: 25, verification: 0, privacy: 0, growth: -8 },
+        feedback: {
+          tag: 'Collaboration Risk',
+          title: 'Secrecy undermines group trust',
+          body: 'Hiding AI use from teammates creates an unfair dynamic. They\'re doing "real" work while you\'re using an accelerator they don\'t know about. That\'s not fair collaboration — even if the output is good.',
+          better: '💡 Normalize the conversation: "I tried AI for this part — here\'s what it gave me, what do you all think?" Transparency is a collaboration skill.'
+        }
+      },
+      {
+        text: 'Use AI to improve clarity and flow after your group has already written the content',
+        quality: 'good',
+        scores: { thinking: 2, integrity: 0, verification: 0, privacy: 0, growth: 16 },
+        feedback: {
+          tag: 'Best Practice',
+          title: 'AI as final editor, human as author',
+          body: 'Human ideas first, AI polish second. This is the right order. Your group did the intellectual work; AI helped with presentation quality. That\'s a legitimate and healthy use.',
+          better: '💡 Tell your group you used AI for editing. Quick transparency: "I ran it through AI to clean up some phrasing — let me know if anything changed that you wanted to keep."'
+        }
+      }
+    ]
+  }
+];
+
+const reflectionStatements = [
+  { text: 'I usually try to solve something myself before asking AI', goodIfAgree: true, scores: { thinking: -8, growth: 12 } },
+  { text: 'I always verify AI-given facts against another source before using them', goodIfAgree: true, scores: { verification: -12, growth: 10 } },
+  { text: 'I could explain an AI answer in my own words without the AI open', goodIfAgree: true, scores: { thinking: -6, growth: 8 } },
+  { text: 'I have submitted AI-written text that I didn\'t fully understand', goodIfAgree: false, scores: { thinking: 15, integrity: 18, growth: -10 } },
+  { text: 'I sometimes use AI because I\'m too anxious or overwhelmed to start', goodIfAgree: false, scores: { thinking: 10, growth: -5 } },
+  { text: 'I think of AI more as a shortcut than a learning tool', goodIfAgree: false, scores: { thinking: 14, integrity: 8, growth: -12 } }
+];
+
+// ═══════════════ STATE ═══════════════
+let scores = { thinking: 0, integrity: 0, verification: 0, privacy: 0, growth: 50 };
+let currentChapter = 0;
+let reflectionAnswers = {};
+let choicesMade = [];
+let gamePhase = 'chapters'; // chapters | reflection | done
+
+// ═══════════════ NAVIGATION ═══════════════
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+
+  if (id === 'screen-how' || id === 'screen-game' || id === 'screen-results') {
+    document.getElementById('progress-bar-wrap').style.display = 'block';
+  } else {
+    document.getElementById('progress-bar-wrap').style.display = 'none';
+  }
+  window.scrollTo(0, 0);
+}
+
+function updateProgressBar() {
+  const total = chapters.length + 1; // chapters + reflection
+  let done = gamePhase === 'reflection' ? chapters.length : currentChapter;
+  const pct = Math.round((done / total) * 100);
+  document.getElementById('progress-bar').style.width = pct + '%';
+}
+
+function openResearch() { document.getElementById('research-modal').classList.add('open'); }
+function openTeacher() { document.getElementById('teacher-modal').classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+// ═══════════════ GAME START ═══════════════
+function startGame() {
+  scores = { thinking: 0, integrity: 0, verification: 0, privacy: 0, growth: 50 };
+  currentChapter = 0;
+  reflectionAnswers = {};
+  choicesMade = [];
+  gamePhase = 'chapters';
+
+  showScreen('screen-game');
+  renderChapter();
+}
+
+function restartGame() { startGame(); }
+
+// ═══════════════ CHAPTER RENDER ═══════════════
+function renderChapter() {
+  updateProgressBar();
+  const ch = chapters[currentChapter];
+
+  document.getElementById('chapter-label').textContent = `Chapter ${ch.id} of ${chapters.length + 1}`;
+  document.getElementById('chapter-title').textContent = ch.title;
+
+  renderDots();
+  renderMiniScores();
+
+  const html = `
+    <div class="scenario-card">
+      <div class="scenario-day-badge">${ch.emoji} ${ch.day}</div>
+      <div class="scenario-text">${ch.scenario}</div>
+      <div class="scenario-sub">${ch.sub}</div>
+    </div>
+    <div class="choices-list" id="choices-list">
+      ${ch.choices.map((c,i) => `
+        <button class="choice-btn" onclick="makeChoice(${i})" data-index="${i}">
+          <div class="choice-letter">${String.fromCharCode(65+i)}</div>
+          <div class="choice-text">${c.text}</div>
+        </button>
+      `).join('')}
+    </div>
+    <div class="feedback-card" id="feedback-card"></div>
+    <div class="next-btn-row" id="next-btn-row" style="display:none">
+      <button class="btn btn-primary" onclick="nextChapter()">
+        ${currentChapter < chapters.length - 1 ? 'Next Scenario →' : 'Final Reflection →'}
+      </button>
+    </div>
+  `;
+
+  document.getElementById('game-content').innerHTML = html;
+}
+
+function makeChoice(index) {
+  const ch = chapters[currentChapter];
+  const choice = ch.choices[index];
+
+  // Disable all buttons
+  document.querySelectorAll('.choice-btn').forEach(b => {
+    b.disabled = true;
+    b.style.opacity = '0.5';
+  });
+
+  // Highlight selected
+  const selected = document.querySelectorAll('.choice-btn')[index];
+  selected.style.opacity = '1';
+  selected.classList.add(`selected-${choice.quality}`);
+  selected.querySelector('.choice-letter').style.background = choice.quality === 'good' ? 'rgba(16,185,129,0.2)' : choice.quality === 'bad' ? 'rgba(239,68,68,0.2)' : 'rgba(245,158,11,0.2)';
+  selected.querySelector('.choice-letter').style.color = choice.quality === 'good' ? 'var(--green)' : choice.quality === 'bad' ? 'var(--red)' : 'var(--yellow)';
+
+  // Apply scores
+  scores.thinking = Math.min(100, Math.max(0, scores.thinking + (choice.scores.thinking || 0)));
+  scores.integrity = Math.min(100, Math.max(0, scores.integrity + (choice.scores.integrity || 0)));
+  scores.verification = Math.min(100, Math.max(0, scores.verification + (choice.scores.verification || 0)));
+  scores.privacy = Math.min(100, Math.max(0, scores.privacy + (choice.scores.privacy || 0)));
+  scores.growth = Math.min(100, Math.max(0, scores.growth + (choice.scores.growth || 0)));
+
+  choicesMade.push({ chapter: ch.id, choice: index, quality: choice.quality });
+
+  // Show feedback
+  const fb = choice.feedback;
+  const fbCard = document.getElementById('feedback-card');
+  fbCard.className = `feedback-card show ${choice.quality}`;
+  fbCard.innerHTML = `
+    <div class="feedback-header">
+      <span class="feedback-tag">${fb.tag}</span>
+    </div>
+    <div class="feedback-title">${fb.title}</div>
+    <div class="feedback-body">${fb.body}</div>
+    <div class="feedback-better">${fb.better}</div>
+  `;
+  fbCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+  // Show next button
+  document.getElementById('next-btn-row').style.display = 'flex';
+
+  // Update mini scores
+  renderMiniScores();
+}
+
+function nextChapter() {
+  currentChapter++;
+  if (currentChapter >= chapters.length) {
+    showReflection();
+  } else {
+    renderChapter();
+    document.getElementById('game-content').scrollIntoView({ behavior: 'smooth' });
+  }
+}
+
+// ═══════════════ DOTS ═══════════════
+function renderDots() {
+  const total = chapters.length + 1;
+  let html = '';
+  for (let i = 0; i < total; i++) {
+    let cls = 'chap-dot';
+    if (i < currentChapter || (gamePhase === 'reflection' && i < chapters.length)) cls += ' done';
+    else if (i === currentChapter) cls += ' active';
+    html += `<div class="${cls}"></div>`;
+  }
+  document.getElementById('chapter-dots').innerHTML = html;
+}
+
+// ═══════════════ MINI SCORES ═══════════════
+function renderMiniScores() {
+  const items = [
+    { key: 'thinking', label: 'THINK', color: 'var(--red)' },
+    { key: 'integrity', label: 'INT', color: 'var(--orange)' },
+    { key: 'verification', label: 'VER', color: 'var(--yellow)' },
+    { key: 'privacy', label: 'PRIV', color: 'var(--purple)' },
+    { key: 'growth', label: 'GRW', color: 'var(--green)' }
+  ];
+  document.getElementById('mini-scores').innerHTML = items.map(item => `
+    <div class="mini-score">
+      <div class="mini-score-bar-wrap">
+        <div class="mini-score-bar" style="height:${scores[item.key]}%;background:${item.color}"></div>
+      </div>
+      <div class="mini-score-label">${item.label}</div>
+    </div>
+  `).join('');
+}
+
+// ═══════════════ REFLECTION ═══════════════
+function showReflection() {
+  gamePhase = 'reflection';
+  updateProgressBar();
+
+  document.getElementById('chapter-label').textContent = 'Chapter 5 of 5 — Reflection';
+  document.getElementById('chapter-title').textContent = 'Friday: Final Reflection';
+  renderDots();
+
+  const html = `
+    <div class="scenario-card">
+      <div class="scenario-day-badge">🪞 Friday</div>
+      <div class="scenario-text">How honest are you with yourself about your AI habits?</div>
+      <div class="scenario-sub">Read each statement. Agree or disagree — there are no right answers, just honest ones.</div>
+    </div>
+    ${reflectionStatements.map((s, i) => `
+      <div class="reflect-item" id="ref-${i}">
+        <div class="reflect-statement">${s.text}</div>
+        <div class="reflect-btns">
+          <button class="reflect-choice" id="ref-${i}-agree" onclick="reflectAnswer(${i}, 'agree')">Agree</button>
+          <button class="reflect-choice" id="ref-${i}-disagree" onclick="reflectAnswer(${i}, 'disagree')">Disagree</button>
+        </div>
+      </div>
+    `).join('')}
+    <div id="reflect-submit-row" style="display:none;text-align:right;margin-top:24px">
+      <button class="btn btn-primary" onclick="showResults()">See My Results →</button>
+    </div>
+  `;
+
+  document.getElementById('game-content').innerHTML = html;
+  window.scrollTo(0, 0);
+}
+
+function reflectAnswer(index, answer) {
+  reflectionAnswers[index] = answer;
+
+  // Update UI
+  const agreeBtn = document.getElementById(`ref-${index}-agree`);
+  const disagreeBtn = document.getElementById(`ref-${index}-disagree`);
+  agreeBtn.className = 'reflect-choice' + (answer === 'agree' ? ' chosen-agree' : '');
+  disagreeBtn.className = 'reflect-choice' + (answer === 'disagree' ? ' chosen-disagree' : '');
+
+  // Apply scores
+  const s = reflectionStatements[index];
+  const isRisky = (s.goodIfAgree && answer === 'disagree') || (!s.goodIfAgree && answer === 'agree');
+  if (isRisky) {
+    Object.keys(s.scores).forEach(k => {
+      if (s.scores[k] > 0) scores[k] = Math.min(100, scores[k] + s.scores[k]);
+      else scores[k] = Math.max(0, scores[k] + s.scores[k]);
+    });
+  }
+
+  // Check if all answered
+  if (Object.keys(reflectionAnswers).length === reflectionStatements.length) {
+    document.getElementById('reflect-submit-row').style.display = 'block';
+  }
+}
+
+// ═══════════════ RESULTS ═══════════════
+function showResults() {
+  showScreen('screen-results');
+  document.getElementById('progress-bar').style.width = '100%';
+
+  // Determine category
+  const riskScore = (scores.thinking + scores.integrity + scores.verification + scores.privacy) / 4;
+  const growthScore = scores.growth;
+
+  let category, color, desc;
+
+  if (riskScore < 15 && growthScore > 65) {
+    category = 'AI Collaborator 🟢';
+    color = 'var(--green)';
+    desc = 'Your AI habits are healthy. You use AI as a tutor and tool — not a replacement for your own thinking. You verify, you reflect, and you stay in the driver\'s seat. Keep building on these habits.';
+  } else if (riskScore < 30) {
+    category = 'Convenience User 🟡';
+    color = 'var(--yellow)';
+    desc = 'You\'re not abusing AI, but you sometimes reach for it before fully engaging your own thinking. That can make work feel easier in the moment while slowly weakening your independent skills over time.';
+  } else if (riskScore < 55) {
+    category = 'Passive Outsourcer 🟠';
+    color = 'var(--orange)';
+    desc = 'Your patterns show real risk. You\'re regularly offloading thinking to AI in ways that may be affecting your learning and academic integrity. The habits are fixable — but you need to start noticing them.';
+  } else {
+    category = 'Skill Replacement Zone 🔴';
+    color = 'var(--red)';
+    desc = 'Your AI use is frequently substituting for your own thinking rather than supporting it. This is the highest-risk pattern — it\'s linked to weaker critical thinking and academic integrity problems. But awareness is the first step.';
+  }
+
+  document.getElementById('result-category').textContent = category;
+  document.getElementById('result-category').style.color = color;
+  document.getElementById('result-desc').textContent = desc;
+
+  // Brain battery
+  const batteryPct = Math.max(15, Math.round(growthScore - riskScore * 0.4));
+  const batteryColor = batteryPct > 60 ? 'var(--green)' : batteryPct > 35 ? 'var(--yellow)' : 'var(--red)';
+  document.getElementById('battery-fill').style.width = batteryPct + '%';
+  document.getElementById('battery-fill').style.background = batteryColor;
+  document.getElementById('battery-pct').textContent = batteryPct + '%';
+  document.getElementById('battery-pct').style.color = batteryColor;
+
+  // Score bars
+  const bars = [
+    { label: 'Thinking Risk', key: 'thinking', color: 'var(--red)' },
+    { label: 'Integrity Risk', key: 'integrity', color: 'var(--orange)' },
+    { label: 'Verification Risk', key: 'verification', color: 'var(--yellow)' },
+    { label: 'Privacy Risk', key: 'privacy', color: 'var(--purple)' },
+    { label: 'Growth Score', key: 'growth', color: 'var(--green)' }
+  ];
+  document.getElementById('score-bars').innerHTML = bars.map(b => `
+    <div class="score-bar-row">
+      <div class="score-bar-label">${b.label}</div>
+      <div class="score-bar-track">
+        <div class="score-bar-fill" style="background:${b.color}" data-val="${scores[b.key]}"></div>
+      </div>
+      <div class="score-bar-val">${scores[b.key]}</div>
+    </div>
+  `).join('');
+
+  // Animate bars
+  setTimeout(() => {
+    document.querySelectorAll('.score-bar-fill').forEach(el => {
+      el.style.width = el.dataset.val + '%';
+    });
+  }, 200);
+
+  // Habits
+  const goodH = [], riskyH = [];
+  choicesMade.forEach(c => {
+    const ch = chapters[c.chapter - 1];
+    const choice = ch.choices[c.choice];
+    if (c.quality === 'good') goodH.push(choice.feedback.title);
+    else riskyH.push(choice.feedback.title);
+  });
+
+  document.getElementById('good-habits').innerHTML = goodH.length > 0
+    ? goodH.slice(0, 3).map(h => `<div class="habit-item"><span class="habit-icon">✅</span>${h}</div>`).join('')
+    : '<div class="habit-item" style="color:var(--text3)">No strong positive patterns detected yet — that\'s ok, you know what to work on.</div>';
+
+  document.getElementById('risky-habits').innerHTML = riskyH.length > 0
+    ? riskyH.slice(0, 3).map(h => `<div class="habit-item"><span class="habit-icon">⚠️</span>${h}</div>`).join('')
+    : '<div class="habit-item" style="color:var(--green)">No risky patterns detected. Great work!</div>';
+
+  // Improvement plan
+  const plan = buildPlan(riskScore, scores);
+  document.getElementById('improvement-plan').innerHTML = plan.map((p, i) => `
+    <div class="plan-item">
+      <div class="plan-day-num">Day ${i + 1}</div>
+      <div class="plan-item-content">
+        <div class="plan-item-title">${p.title}</div>
+        <div class="plan-item-desc">${p.desc}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function buildPlan(riskScore, scores) {
+  const plan = [];
+
+  if (scores.thinking > 30) {
+    plan.push({ title: 'The 10-Minute Rule', desc: 'For every assignment, spend 10 minutes working entirely without AI first. Write bullet points, rough ideas, whatever comes. Then and only then open AI for feedback on what you produced.' });
+  } else {
+    plan.push({ title: 'Keep your "think first" habit', desc: 'You\'re already starting with your own thinking — great. Challenge yourself to go 15 minutes before opening AI this week.' });
+  }
+
+  if (scores.verification > 20) {
+    plan.push({ title: 'One Fact, One Source', desc: 'Every AI claim you use in schoolwork must be checked against one real source. No exceptions. It takes 2 minutes and protects you from hallucinations.' });
+  } else {
+    plan.push({ title: 'Stay sharp on verification', desc: 'You already verify — good habit. Practice cross-referencing AI answers with class notes, not just other websites. Your teacher\'s materials are often more reliable than random sources.' });
+  }
+
+  if (scores.integrity > 25) {
+    plan.push({ title: 'The "Can I Defend It?" Test', desc: 'Before submitting any AI-assisted work, ask: if my teacher asked me to explain every paragraph out loud, could I? If not, you\'re submitting work that isn\'t really yours yet.' });
+  } else {
+    plan.push({ title: 'Go deeper with AI', desc: 'You\'re staying honest — now push further. Try using AI to challenge your arguments: "What are the weaknesses in this essay?" That builds real critical thinking.' });
+  }
+
+  if (scores.privacy > 15) {
+    plan.push({ title: 'Privacy Audit', desc: 'Review what you\'ve been pasting into AI tools. Avoid uploading private class materials, personal information, or confidential assignment details. Stick to general questions.' });
+  } else {
+    plan.push({ title: 'Explore AI for retrieval practice', desc: 'Ask AI to generate 10 practice questions on a topic you\'re studying this week. Test yourself without looking at notes. Then review. This is one of the highest-value study moves.' });
+  }
+
+  plan.push({ title: 'Reflect on one AI interaction', desc: 'At the end of the week, write 2–3 sentences about one time you used AI. Did it help you learn or did it do the learning for you? This habit builds the meta-awareness that separates strong learners.' });
+
+  plan.push({ title: 'Teach it back', desc: 'Pick one thing AI explained to you this week. Explain it to a friend, family member, or yourself — out loud, without AI open. If you can explain it, you own it. If you can\'t, revisit it.' });
+
+  plan.push({ title: 'Full week check-in', desc: 'Look back. Did you try before asking? Did you verify facts? Did you submit work you could explain? Small wins compound. Notice what improved and what needs more work.' });
+
+  return plan.slice(0, 7);
+}
+
+function printPledge() {
+  const pledgeHTML = `
+    <html><head><title>My AI Study Pledge</title>
+    <style>
+      body { font-family: 'Georgia', serif; max-width: 500px; margin: 60px auto; padding: 40px; border: 3px solid #333; border-radius: 8px; }
+      h1 { text-align:center; font-size: 24px; margin-bottom: 8px; }
+      .sub { text-align:center; color: #666; font-size: 13px; margin-bottom: 30px; }
+      .line { padding: 8px 0; border-bottom: 1px solid #eee; font-size: 15px; }
+      .line::before { content: '✓ '; color: green; font-weight: bold; }
+      .sig { margin-top: 40px; border-top: 1px solid #333; padding-top: 12px; font-size: 13px; color: #999; }
+    </style>
+    </head><body>
+    <h1>My AI Study Rules</h1>
+    <div class="sub">AI Study Risk Check — ai-study-risk-check</div>
+    <div class="line">I will think first — try for at least 10 minutes before asking AI</div>
+    <div class="line">I will verify AI facts against real sources before using them</div>
+    <div class="line">I will not submit work I cannot explain in my own words</div>
+    <div class="line">I will use AI to improve my thinking, not replace it</div>
+    <div class="line">I will protect my privacy and not share sensitive information</div>
+    <div class="sig">Signed: ___________________________ Date: ___________</div>
+    </body></html>
+  `;
+  const w = window.open('', '_blank');
+  w.document.write(pledgeHTML);
+  w.document.close();
+  setTimeout(() => w.print(), 500);
+}
+
+// Close modals on overlay click
+document.querySelectorAll('.modal-overlay').forEach(el => {
+  el.addEventListener('click', e => {
+    if (e.target === el) el.classList.remove('open');
+  });
+});
+
+// Initial state
+document.getElementById('screen-home').classList.add('active');
+</script>
+</body>
+</html>
